@@ -1,2 +1,2 @@
-# Judson-Interns-K12-ERP
+# Judson-Interns-JHH
 Repository for Judson Internship Project - Summer 2026
