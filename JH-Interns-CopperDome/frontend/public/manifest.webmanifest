@@ -1,15 +1,19 @@
 {
   "name": "Copper Dome Concierge",
   "short_name": "CopperDome",
-  "start_url": ".",
+  "description": "The patron concierge experience for Copper Dome.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1f2937",
+  "orientation": "portrait",
+  "background_color": "#18120e",
+  "theme_color": "#18120e",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

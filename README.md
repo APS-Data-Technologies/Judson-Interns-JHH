@@ -8,6 +8,8 @@ This repository currently hosts the Copper Dome Concierge validation scaffold un
 
 The Copper Dome Concierge scaffold is a demo-ready validation prototype for a shared dining concierge experience. It is built as a React PWA frontend, Django REST backend, and PostgreSQL database, with a Docker Compose local development setup.
 
+Detailed scope and milestones are available in `JH-Interns-CopperDome/docs/project-scope-summary.md`.
+
 ## Project Goals
 
 - Validate whether patrons engage with a digital concierge.
