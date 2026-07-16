@@ -38,3 +38,30 @@ export interface CartLine {
   kitchenName: string;
   quantity: number;
 }
+
+export type ServiceRequestType = 'call_server' | 'water' | 'check' | 'surprise_me';
+export type ServiceRequestStatus = 'pending' | 'acknowledged' | 'resolved';
+
+export interface ServiceRequest {
+  id: number;
+  session_id: string;
+  table_number: string;
+  request_type: ServiceRequestType;
+  status: ServiceRequestStatus;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface ConciergeChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AnalyticsSummary {
+  total_sessions: number;
+  concierge_open_rate: number;
+  ai_queries_per_session: number;
+  request_types_by_frequency: Record<string, number>;
+  menu_to_cart_drop_off: number;
+  median_session_duration_seconds: number;
+}

@@ -14,7 +14,18 @@ This repository provides scaffolding for the Copper Dome Concierge project, incl
 
 Each package is organized independently. Clone the repository and open the workspace in your editor.
 
-For instructions, start with the README files in `frontend/` and `backend/`.
+For instructions, start with the README files in `frontend/` and `backend/`, or run the setup
+scripts in [`scripts/`](scripts/README.md):
+
+```bash
+./scripts/setup-backend.sh && ./scripts/setup-frontend.sh && ./scripts/seed.sh
+./scripts/dev-backend.sh    # terminal 1
+./scripts/dev-frontend.sh   # terminal 2
+```
+
+Add your `ANTHROPIC_API_KEY` to `backend/.env` to enable the AI concierge. See
+[`docs/architecture.md`](docs/architecture.md) for how the pieces fit together and
+[`docs/api.md`](docs/api.md) for the full endpoint reference.
 
 ## Local Development with Docker
 

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchKitchens, fetchMenuItems } from '../../lib/api';
+import { createServiceRequest, fetchKitchens, fetchMenuItems } from '../../lib/api';
 import { useSession } from '../../lib/session';
-import { useComingSoon } from '../../lib/toast';
+import { useToast } from '../../lib/toast';
 import { formatPrice } from '../../lib/dietary';
-import type { Kitchen, MenuItem } from '../../lib/types';
+import type { Kitchen, MenuItem, ServiceRequestType } from '../../lib/types';
 import BottomNav from '../../components/BottomNav';
 import { LoadingState } from '../../components/AsyncState';
 import {
@@ -22,19 +22,43 @@ interface Highlight {
   kitchenName: string;
 }
 
-const ACTION_TILES = [
-  { key: 'browse', label: 'Browse Menu', Icon: IconBook, enabled: true },
-  { key: 'concierge', label: 'Ask AI Concierge', Icon: IconBot, enabled: false },
-  { key: 'water', label: 'Need Water', Icon: IconDroplet, enabled: false },
-  { key: 'server', label: 'Call Server', Icon: IconBell, enabled: false },
-  { key: 'check', label: 'Request Check', Icon: IconReceipt, enabled: false },
-  { key: 'surprise', label: 'Surprise Me', Icon: IconSparkles, enabled: false },
-] as const;
+type TileAction =
+  | { type: 'navigate'; to: string }
+  | { type: 'service_request'; requestType: ServiceRequestType; confirmation: string };
+
+const ACTION_TILES: Array<{ key: string; label: string; Icon: typeof IconBook; action: TileAction }> = [
+  { key: 'browse', label: 'Browse Menu', Icon: IconBook, action: { type: 'navigate', to: '/menu' } },
+  { key: 'concierge', label: 'Ask AI Concierge', Icon: IconBot, action: { type: 'navigate', to: '/concierge' } },
+  {
+    key: 'water',
+    label: 'Need Water',
+    Icon: IconDroplet,
+    action: { type: 'service_request', requestType: 'water', confirmation: 'Water is on its way' },
+  },
+  {
+    key: 'server',
+    label: 'Call Server',
+    Icon: IconBell,
+    action: { type: 'service_request', requestType: 'call_server', confirmation: 'A server has been notified' },
+  },
+  {
+    key: 'check',
+    label: 'Request Check',
+    Icon: IconReceipt,
+    action: { type: 'service_request', requestType: 'check', confirmation: 'Your check is on the way' },
+  },
+  {
+    key: 'surprise',
+    label: 'Surprise Me',
+    Icon: IconSparkles,
+    action: { type: 'service_request', requestType: 'surprise_me', confirmation: "The kitchen's on it" },
+  },
+];
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { session } = useSession();
-  const comingSoon = useComingSoon();
+  const { showToast } = useToast();
   const [chefSelection, setChefSelection] = useState<Highlight | null>(null);
   const [curatedForYou, setCuratedForYou] = useState<Highlight | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +92,20 @@ export default function HomePage() {
     };
   }, []);
 
+  const handleTileAction = async (action: TileAction) => {
+    if (action.type === 'navigate') {
+      navigate(action.to);
+      return;
+    }
+    if (!session) return;
+    try {
+      await createServiceRequest(session.sessionId, session.tableNumber, action.requestType);
+      showToast(action.confirmation);
+    } catch {
+      showToast("Couldn't send that request — please flag down your server.");
+    }
+  };
+
   return (
     <section className="screen">
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -97,13 +135,12 @@ export default function HomePage() {
       )}
 
       <div className="tile-grid">
-        {ACTION_TILES.map(({ key, label, Icon, enabled }) => (
+        {ACTION_TILES.map(({ key, label, Icon, action }) => (
           <button
             key={key}
             type="button"
             className="action-tile"
-            aria-disabled={!enabled}
-            onClick={() => (enabled ? navigate('/menu') : comingSoon())}
+            onClick={() => handleTileAction(action)}
           >
             <Icon />
             <span>{label}</span>

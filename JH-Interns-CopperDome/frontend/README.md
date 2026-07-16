@@ -1,15 +1,14 @@
 # Frontend - JH-Interns-CopperDome
 
-This directory contains the React Progressive Web App (PWA) frontend for the Copper Dome Concierge project.
+React PWA frontend for Copper Dome Concierge — the patron app and the staff floor view share
+this codebase (see `src/app/App.tsx` for the route split).
 
-## Overview
+## Routes
 
-The frontend is structured to support:
-- PWA offline capabilities.
-- React Router navigation.
-- Modular component architecture.
-- API integration via Axios.
-- WebSocket support for real-time concierge updates.
+- `/`, `/home`, `/menu`, `/menu/:id`, `/cart`, `/checkout`, `/order-status`, `/concierge` —
+  patron flow, gated behind a QR/table session (`src/lib/session.tsx`).
+- `/staff`, `/staff/analytics` — staff floor view and trial analytics, no patron session
+  required, live-updated over WebSocket (`src/lib/staffSocket.ts`).
 
 ## Local Development
 
@@ -18,22 +17,31 @@ The frontend is structured to support:
    cd frontend
    npm install
    ```
+   (or `../scripts/setup-frontend.sh` from the repo root)
 
-2. Start the development server:
+2. Start the dev server (backend must be running on `:8000` — `/api` and `/ws` are proxied
+   there, see `vite.config.ts`):
    ```bash
-   npm start
+   npm run dev
    ```
 
-3. Open the app in your browser at `http://localhost:3000`.
+3. Open `http://localhost:3000` for the patron app, `http://localhost:3000/staff` for the
+   staff floor view.
+
+4. Type-check + build / run tests:
+   ```bash
+   npm run build
+   npm test
+   ```
 
 ## Key Directories
 
-- `src/app/` - App route and layout structure.
-- `src/components/` - Reusable UI components.
-- `src/features/` - Feature-specific modules.
-- `src/lib/` - API clients, utilities, and helpers.
-- `public/` - Static assets and PWA manifest.
+- `src/app/` - route/layout structure (`App.tsx`).
+- `src/components/` - shared UI components (nav, headers, icons, async states).
+- `src/features/<name>/` - one page (or small group) per screen, each with a colocated
+  `.test.tsx`.
+- `src/lib/` - the API client (`api.ts`), session/cart/toast context, and the staff WebSocket
+  hook.
+- `public/` - static assets and the PWA manifest.
 
-## Notes
-
-This scaffold includes a starter React app layout and PWA configuration. Add routes, state management, and API integration to complete the concierge experience.
+See [`../docs/architecture.md`](../docs/architecture.md) for how this fits with the backend.

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { useComingSoon } from '../../lib/toast';
+import { createServiceRequest } from '../../lib/api';
+import { useSession } from '../../lib/session';
+import { useToast } from '../../lib/toast';
 import ScreenHeader from '../../components/ScreenHeader';
 import { IconBell, IconBot, IconCheck, IconClock } from '../../components/icons';
 
@@ -8,7 +10,18 @@ const PROGRESS_PERCENT = 15;
 
 export default function OrderStatusPage() {
   const navigate = useNavigate();
-  const comingSoon = useComingSoon();
+  const { session } = useSession();
+  const { showToast } = useToast();
+
+  const handleRequestService = async () => {
+    if (!session) return;
+    try {
+      await createServiceRequest(session.sessionId, session.tableNumber, 'call_server');
+      showToast('A server has been notified');
+    } catch {
+      showToast("Couldn't send that request — please flag down your server.");
+    }
+  };
 
   return (
     <section className="screen screen--center screen--no-nav">
@@ -49,11 +62,11 @@ export default function OrderStatusPage() {
           Continue Browsing
         </button>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" className="btn btn-secondary" onClick={comingSoon}>
+          <button type="button" className="btn btn-secondary" onClick={() => navigate('/concierge')}>
             <IconBot width={18} height={18} />
             Ask Concierge
           </button>
-          <button type="button" className="btn btn-secondary" onClick={comingSoon}>
+          <button type="button" className="btn btn-secondary" onClick={handleRequestService}>
             <IconBell width={18} height={18} />
             Request Service
           </button>

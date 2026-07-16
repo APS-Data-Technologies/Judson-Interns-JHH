@@ -50,3 +50,43 @@ class MenuApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(EventLog.objects.count(), 1)
         self.assertEqual(EventLog.objects.get().event_type, 'menu_viewed')
+
+
+class AnalyticsApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_analytics_computes_engagement_metrics(self):
+        EventLog.objects.create(
+            event_type='session_started', session_id='s1', timestamp='2026-07-08T12:00:00Z'
+        )
+        EventLog.objects.create(
+            event_type='menu_viewed', session_id='s1', timestamp='2026-07-08T12:00:10Z'
+        )
+        EventLog.objects.create(
+            event_type='ai_question_asked', session_id='s1', timestamp='2026-07-08T12:00:20Z'
+        )
+        EventLog.objects.create(
+            event_type='item_added_to_cart', session_id='s1', timestamp='2026-07-08T12:00:30Z'
+        )
+        EventLog.objects.create(
+            event_type='session_started', session_id='s2', timestamp='2026-07-08T12:05:00Z'
+        )
+        EventLog.objects.create(
+            event_type='menu_viewed', session_id='s2', timestamp='2026-07-08T12:05:10Z'
+        )
+        EventLog.objects.create(
+            event_type='service_request_created',
+            session_id='s2',
+            timestamp='2026-07-08T12:05:20Z',
+            metadata={'request_type': 'water', 'table_number': '02'},
+        )
+
+        response = self.client.get('/api/menu/analytics/')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['total_sessions'], 2)
+        self.assertEqual(payload['concierge_open_rate'], 0.5)
+        self.assertEqual(payload['request_types_by_frequency'], {'water': 1})
+        self.assertEqual(payload['menu_to_cart_drop_off'], 0.5)

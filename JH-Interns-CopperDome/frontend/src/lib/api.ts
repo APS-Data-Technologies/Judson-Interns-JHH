@@ -1,5 +1,15 @@
 import axios from 'axios';
-import type { EventType, Kitchen, MenuItem, Venue } from './types';
+import type {
+  AnalyticsSummary,
+  ConciergeChatMessage,
+  EventType,
+  Kitchen,
+  MenuItem,
+  ServiceRequest,
+  ServiceRequestStatus,
+  ServiceRequestType,
+  Venue,
+} from './types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -49,4 +59,50 @@ export async function logEvent({ eventType, sessionId, metadata = {} }: LogEvent
   } catch {
     // Event logging is best-effort — a failed analytics call should never block the patron flow.
   }
+}
+
+export async function askConcierge(
+  sessionId: string,
+  message: string,
+  history: ConciergeChatMessage[] = []
+): Promise<string> {
+  const response = await api.post<{ reply: string }>('/concierge/ask/', {
+    session_id: sessionId,
+    message,
+    history,
+  });
+  return response.data.reply;
+}
+
+export async function createServiceRequest(
+  sessionId: string,
+  tableNumber: string,
+  requestType: ServiceRequestType
+): Promise<ServiceRequest> {
+  const response = await api.post<ServiceRequest>('/service-requests/', {
+    session_id: sessionId,
+    table_number: tableNumber,
+    request_type: requestType,
+  });
+  return response.data;
+}
+
+export async function fetchServiceRequests(status?: ServiceRequestStatus): Promise<ServiceRequest[]> {
+  const response = await api.get<ServiceRequest[]>('/service-requests/', {
+    params: status ? { status } : undefined,
+  });
+  return response.data;
+}
+
+export async function updateServiceRequestStatus(
+  id: number,
+  status: ServiceRequestStatus
+): Promise<ServiceRequest> {
+  const response = await api.patch<ServiceRequest>(`/service-requests/${id}/`, { status });
+  return response.data;
+}
+
+export async function fetchAnalytics(): Promise<AnalyticsSummary> {
+  const response = await api.get<AnalyticsSummary>('/menu/analytics/');
+  return response.data;
 }

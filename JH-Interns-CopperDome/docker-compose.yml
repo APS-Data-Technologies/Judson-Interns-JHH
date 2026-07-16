@@ -29,6 +29,10 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       ALLOWED_HOSTS: localhost,127.0.0.1
+      # Set on the host before `docker compose up` (e.g. `export ANTHROPIC_API_KEY=sk-ant-...`)
+      # so the AI concierge works — the key is never baked into the image or committed.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
     depends_on:
       - db
     command: sh -c "pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -42,6 +46,7 @@ services:
       - "3000:3000"
     environment:
       VITE_API_BASE_URL: http://host.docker.internal:8000/api
+      VITE_WS_BASE_URL: ws://host.docker.internal:8000/ws/staff/
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
 
 volumes:

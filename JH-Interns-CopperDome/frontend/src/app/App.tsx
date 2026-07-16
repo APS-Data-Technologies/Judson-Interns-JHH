@@ -10,6 +10,9 @@ import DishDetailPage from '../features/menu/DishDetailPage';
 import CartPage from '../features/cart/CartPage';
 import CheckoutPage from '../features/checkout/CheckoutPage';
 import OrderStatusPage from '../features/orders/OrderStatusPage';
+import ConciergePage from '../features/concierge/ConciergePage';
+import StaffFeedPage from '../features/staff/StaffFeedPage';
+import AnalyticsPage from '../features/staff/AnalyticsPage';
 
 export default function App() {
   return (
@@ -67,6 +70,16 @@ export default function App() {
                   </RequireSession>
                 }
               />
+              <Route
+                path="/concierge"
+                element={
+                  <RequireSession>
+                    <ConciergePage />
+                  </RequireSession>
+                }
+              />
+              <Route path="/staff" element={<StaffFeedPage />} />
+              <Route path="/staff/analytics" element={<AnalyticsPage />} />
             </Routes>
           </div>
         </ToastProvider>

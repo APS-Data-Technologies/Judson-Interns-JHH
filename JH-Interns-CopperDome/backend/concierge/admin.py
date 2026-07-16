@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import Guest
+from .models import ServiceRequest
 
 
-@admin.register(Guest)
-class GuestAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'checked_in')
-    list_filter = ('checked_in',)
-    search_fields = ('first_name', 'last_name', 'email')
+@admin.register(ServiceRequest)
+class ServiceRequestAdmin(admin.ModelAdmin):
+    list_display = ('request_type', 'table_number', 'status', 'created_at')
+    list_filter = ('request_type', 'status')
+    search_fields = ('session_id', 'table_number')

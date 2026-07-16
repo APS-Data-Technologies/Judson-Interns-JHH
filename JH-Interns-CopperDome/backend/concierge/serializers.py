@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import Guest
+from .models import ServiceRequest
 
 
-class GuestSerializer(serializers.ModelSerializer):
+class ServiceRequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Guest
-        fields = ['id', 'first_name', 'last_name', 'email', 'checked_in']
+        model = ServiceRequest
+        fields = ['id', 'session_id', 'table_number', 'request_type', 'status', 'created_at', 'resolved_at']
+        read_only_fields = ['id', 'created_at', 'resolved_at']

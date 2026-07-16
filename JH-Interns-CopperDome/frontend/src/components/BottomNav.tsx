@@ -6,7 +6,7 @@ import { useComingSoon } from '../lib/toast';
 const ITEMS = [
   { key: 'home', path: '/home', Icon: IconHome, enabled: true },
   { key: 'menu', path: '/menu', Icon: IconBook, enabled: true },
-  { key: 'concierge', path: '/concierge', Icon: IconBot, enabled: false },
+  { key: 'concierge', path: '/concierge', Icon: IconBot, enabled: true },
   { key: 'cart', path: '/cart', Icon: IconBag, enabled: true },
   { key: 'more', path: '/more', Icon: IconMore, enabled: false },
 ] as const;

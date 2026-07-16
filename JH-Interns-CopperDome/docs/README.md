@@ -1,17 +1,18 @@
 # Docs - JH-Interns-CopperDome
 
-This directory contains documentation for the Copper Dome Concierge project.
+Documentation for the Copper Dome Concierge project.
 
-## Overview
+## Contents
 
-Use this folder to store:
-- Architecture and design docs.
-- API and data model documentation.
-- Deployment and runbooks.
-- Security and integration notes.
+- [`project-scope-summary.md`](project-scope-summary.md) — condensed project scope, objectives,
+  and milestones (see the full scope PDF for the authoritative version).
+- [`architecture.md`](architecture.md) — system diagram, backend app responsibilities, real-time
+  data flow, and what's deliberately out of scope for Phase 1.
+- [`api.md`](api.md) — every REST endpoint and the WebSocket feed, with request/response shapes.
 
-## Suggested Documentation
+## Still needed before a real trial
 
-- `architecture.md` for system diagrams and service responsibilities.
-- `api.md` for API contract and endpoint descriptions.
-- `deployment.md` for deployment steps and environment requirements.
+- `deployment.md` — deployment steps and environment requirements for the venue trial
+  (not yet written; see `docker-compose.yml` and the `backend/`/`frontend/` READMEs for local
+  dev in the meantime).
+- The validation findings memo — written after the live trial per the scope doc, not before.

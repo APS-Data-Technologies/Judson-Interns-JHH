@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import HomePage from './HomePage';
-import { renderAtRoute, seedSession, makeKitchen, makeMenuItem } from '../../test/utils';
+import { renderAtRoute, seedSession, makeKitchen, makeMenuItem, makeServiceRequest } from '../../test/utils';
 
 vi.mock('../../lib/api');
 import * as api from '../../lib/api';
@@ -14,6 +14,7 @@ describe('HomePage', () => {
       makeMenuItem({ id: 1, name: 'Smoked Clam Chowder' }),
       makeMenuItem({ id: 2, name: 'Grilled Artichoke' }),
     ]);
+    vi.mocked(api.createServiceRequest).mockResolvedValue(makeServiceRequest());
   });
 
   it('renders without errors, showing venue/table and highlight cards', async () => {
@@ -36,16 +37,28 @@ describe('HomePage', () => {
     expect(await screen.findByText('MENU STUB')).toBeInTheDocument();
   });
 
-  it('shows disabled tiles as non-functional placeholders', async () => {
+  it('fires a service request and confirms it with a toast when a quick-action tile is tapped', async () => {
+    renderAtRoute({
+      route: '/home',
+      routes: [{ path: '/home', element: <HomePage /> }],
+    });
+    fireEvent.click(screen.getByText('Need Water'));
+
+    await waitFor(() => {
+      expect(api.createServiceRequest).toHaveBeenCalledWith('test-session-id', '04', 'water');
+    });
+    expect(await screen.findByText('Water is on its way')).toBeInTheDocument();
+  });
+
+  it('navigates to the AI concierge when its tile is tapped', async () => {
     renderAtRoute({
       route: '/home',
       routes: [
         { path: '/home', element: <HomePage /> },
-        { path: '/menu', element: <div>MENU STUB</div> },
+        { path: '/concierge', element: <div>CONCIERGE STUB</div> },
       ],
     });
-    fireEvent.click(screen.getByText('Need Water'));
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
-    expect(screen.queryByText('MENU STUB')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Ask AI Concierge'));
+    expect(await screen.findByText('CONCIERGE STUB')).toBeInTheDocument();
   });
 });

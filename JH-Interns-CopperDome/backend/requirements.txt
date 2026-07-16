@@ -1,6 +1,8 @@
 Django>=5.2,<6.0
 psycopg2-binary>=2.9
-djangorestframework>=3.18
+djangorestframework>=3.16,<4.0
 django-environ>=0.10
 channels>=4.0
 channels-redis>=4.0
+daphne>=4.0
+anthropic>=0.40,<1.0

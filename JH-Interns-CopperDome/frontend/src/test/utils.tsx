@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { SessionProvider } from '../lib/session';
 import { CartProvider } from '../lib/cart';
 import { ToastProvider } from '../lib/toast';
-import type { CartLine, Kitchen, MenuItem } from '../lib/types';
+import type { CartLine, Kitchen, MenuItem, ServiceRequest } from '../lib/types';
 
 export const SESSION_STORAGE_KEY = 'copperdome.session';
 export const CART_STORAGE_KEY = 'copperdome.cart';
@@ -51,6 +51,19 @@ export function makeKitchen(overrides: Partial<Kitchen> = {}): Kitchen {
     name: 'The Copper Rail Kitchen',
     cuisine_type: 'American coastal comfort',
     description: 'Grilled, smoked and wood-fired comfort food.',
+    ...overrides,
+  };
+}
+
+export function makeServiceRequest(overrides: Partial<ServiceRequest> = {}): ServiceRequest {
+  return {
+    id: 1,
+    session_id: 'test-session-id',
+    table_number: '04',
+    request_type: 'water',
+    status: 'pending',
+    created_at: '2026-01-01T00:00:00.000Z',
+    resolved_at: null,
     ...overrides,
   };
 }
