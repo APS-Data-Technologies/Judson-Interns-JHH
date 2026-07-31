@@ -2,7 +2,6 @@
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-startCommand = "daphne -b 0.0.0.0 -p $PORT backend.asgi:application"
 healthcheckPath = "/api/menu/items/"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
