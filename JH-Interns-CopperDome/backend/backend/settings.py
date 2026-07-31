@@ -5,7 +5,6 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
-    POSTGRES_PORT=(int, 5432),
 )
 
 ENV_FILE = BASE_DIR / '.env'
@@ -67,25 +66,9 @@ CHANNEL_LAYERS = {
     },
 }
 
-DB_ENGINE = env('DB_ENGINE', default='postgresql')
-if DB_ENGINE == 'sqlite3':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': env('POSTGRES_DB', default='copperdome_dev'),
-            'USER': env('POSTGRES_USER', default='copperdome_user'),
-            'PASSWORD': env('POSTGRES_PASSWORD', default='replace-me'),
-            'HOST': env('POSTGRES_HOST', default='127.0.0.1'),
-            'PORT': env('POSTGRES_PORT'),
-        }
-    }
+DATABASES = {
+    'default': env.db('DATABASE_URL', default='sqlite:///db.sqlite3')
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
