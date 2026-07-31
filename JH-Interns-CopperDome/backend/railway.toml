@@ -2,8 +2,6 @@
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-healthcheckPath = "/api/menu/items/"
-healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
