@@ -6,6 +6,7 @@ import { useToast } from '../../lib/toast';
 import { formatPrice } from '../../lib/dietary';
 import type { Kitchen, MenuItem, ServiceRequestType } from '../../lib/types';
 import BottomNav from '../../components/BottomNav';
+import ConsentBanner from '../../components/ConsentBanner';
 import { LoadingState } from '../../components/AsyncState';
 import {
   IconBook,
@@ -114,6 +115,8 @@ export default function HomePage() {
         </div>
         {session && <span className="chip">Table {session.tableNumber}</span>}
       </header>
+
+      <ConsentBanner />
 
       {isLoading && <LoadingState label="Loading tonight's menu..." />}
 

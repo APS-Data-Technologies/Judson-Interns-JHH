@@ -4,7 +4,8 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { SessionProvider } from '../lib/session';
 import { CartProvider } from '../lib/cart';
 import { ToastProvider } from '../lib/toast';
-import type { CartLine, Kitchen, MenuItem, ServiceRequest } from '../lib/types';
+import type { CartLine, Kitchen, MenuItem, Order, ServiceRequest } from '../lib/types';
+import { setPatronToken } from '../lib/auth';
 
 export const SESSION_STORAGE_KEY = 'copperdome.session';
 export const CART_STORAGE_KEY = 'copperdome.cart';
@@ -15,10 +16,14 @@ export function seedSession(overrides: Partial<Record<string, unknown>> = {}) {
     tableNumber: '04',
     venueId: 1,
     venueName: 'Copper Dome Concierge',
+    analyticsOptIn: true,
     startedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };
   window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  // A real session is always issued alongside its bearer token; the app discards a
+  // stored session that has none. Seed both so tests match production.
+  setPatronToken('test-patron-token');
   return session;
 }
 
@@ -40,6 +45,38 @@ export function makeMenuItem(overrides: Partial<MenuItem> = {}): MenuItem {
     price: '9.00',
     category: 'Starters',
     dietary_tags: ['V', 'GF'],
+    ...overrides,
+  };
+}
+
+export function makeOrder(overrides: Partial<Order> = {}): Order {
+  return {
+    id: 7,
+    session_id: 'test-session-id',
+    table_number: '04',
+    status: 'placed',
+    total: '25.00',
+    created_at: '2026-08-06T20:00:00.000Z',
+    items: [
+      {
+        id: 1,
+        menu_item: 1,
+        kitchen: 1,
+        kitchen_name: 'The Copper Rail Kitchen',
+        name: 'Smoked Clam Chowder',
+        price: '9.00',
+        quantity: 1,
+      },
+      {
+        id: 2,
+        menu_item: 12,
+        kitchen: 2,
+        kitchen_name: 'Dome Garden Kitchen',
+        name: 'Crispy Chickpea Bites',
+        price: '8.00',
+        quantity: 2,
+      },
+    ],
     ...overrides,
   };
 }

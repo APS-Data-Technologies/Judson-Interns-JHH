@@ -4,6 +4,7 @@ import { fetchServiceRequests, updateServiceRequestStatus } from '../../lib/api'
 import { useStaffFeed } from '../../lib/staffSocket';
 import type { ServiceRequest, ServiceRequestStatus } from '../../lib/types';
 import { LoadingState } from '../../components/AsyncState';
+import TableStatusStrip from './TableStatusStrip';
 import { IconBell, IconCheck, IconClock, IconDroplet, IconReceipt, IconSparkles } from '../../components/icons';
 
 const REQUEST_LABELS: Record<ServiceRequest['request_type'], string> = {
@@ -59,15 +60,26 @@ export default function StaffFeedPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const { connected } = useStaffFeed((message) => {
-    setRequests((prev) => {
-      const exists = prev.some((r) => r.id === message.request.id);
-      if (exists) {
-        return prev.map((r) => (r.id === message.request.id ? message.request : r));
-      }
-      return [message.request, ...prev];
-    });
-  });
+  const { connected } = useStaffFeed(
+    (message) => {
+      setRequests((prev) => {
+        const exists = prev.some((r) => r.id === message.request.id);
+        if (exists) {
+          return prev.map((r) => (r.id === message.request.id ? message.request : r));
+        }
+        return [message.request, ...prev];
+      });
+    },
+    // Polling fallback: while the socket is down, re-read the list so the floor
+    // still sees new requests.
+    () => {
+      fetchServiceRequests()
+        .then(setRequests)
+        .catch(() => {
+          // Keep showing the last known list rather than blanking the floor view.
+        });
+    },
+  );
 
   const handleAdvance = async (request: ServiceRequest) => {
     const nextStatus: ServiceRequestStatus = request.status === 'pending' ? 'acknowledged' : 'resolved';
@@ -84,13 +96,20 @@ export default function StaffFeedPage() {
         <div>
           <h1 className="headline-md">Staff Floor View</h1>
           <p className="label-sm" style={{ marginTop: 4 }}>
-            {connected ? 'Live' : 'Reconnecting…'}
+            {connected ? 'Live' : 'Reconnecting — polling every 5s'}
           </p>
         </div>
-        <Link to="/staff/analytics" className="chip" style={{ textDecoration: 'none' }}>
-          Analytics
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="/staff/kitchen" className="chip" style={{ textDecoration: 'none' }}>
+            Kitchen
+          </Link>
+          <Link to="/staff/analytics" className="chip" style={{ textDecoration: 'none' }}>
+            Analytics
+          </Link>
+        </div>
       </header>
+
+      <TableStatusStrip />
 
       {isLoading && <LoadingState label="Loading service requests..." />}
 
@@ -98,7 +117,7 @@ export default function StaffFeedPage() {
         <p className="state-message">No open requests right now.</p>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="request-list">
         {activeRequests.map((request) => {
           const Icon = REQUEST_ICONS[request.request_type];
           return (

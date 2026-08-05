@@ -21,6 +21,7 @@ function renderStaffFeed() {
       <Routes>
         <Route path="/staff" element={<StaffFeedPage />} />
         <Route path="/staff/analytics" element={<div>ANALYTICS STUB</div>} />
+        <Route path="/staff/kitchen" element={<div>KITCHEN STUB</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -29,6 +30,9 @@ function renderStaffFeed() {
 describe('StaffFeedPage', () => {
   beforeEach(() => {
     latestOnMessage = undefined;
+    // The table-status strip renders alongside the feed; these tests cover the feed, so
+    // give it an empty roster rather than letting the mocked call resolve undefined.
+    vi.mocked(api.fetchTableStates).mockResolvedValue([]);
   });
 
   it('hydrates from fetchServiceRequests and renders open requests', async () => {

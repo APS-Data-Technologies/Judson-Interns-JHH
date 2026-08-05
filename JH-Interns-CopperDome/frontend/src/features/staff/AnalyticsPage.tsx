@@ -66,8 +66,14 @@ export default function AnalyticsPage() {
 
       {status === 'ready' && summary && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="stat-grid">
             <StatTile label="Total Sessions" value={String(summary.total_sessions)} />
+            {/* Consent rate for the trial record. Declined sessions contribute no events,
+                so this is the only place they are visible at all. */}
+            <StatTile
+              label="Trial Opt-in Rate"
+              value={`${formatPercent(summary.opt_in_rate)} (${summary.sessions_opted_in}/${summary.sessions_issued})`}
+            />
             <StatTile label="Concierge-Open Rate" value={formatPercent(summary.concierge_open_rate)} />
             <StatTile label="AI Queries / Session" value={summary.ai_queries_per_session.toFixed(1)} />
             <StatTile label="Menu-to-Cart Drop-off" value={formatPercent(summary.menu_to_cart_drop_off)} />

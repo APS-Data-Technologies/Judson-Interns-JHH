@@ -105,6 +105,81 @@ a {
   background: var(--color-surface);
 }
 
+/* ---------------------------------------------------------------------------
+   Desktop and tablet
+   ---------------------------------------------------------------------------
+   On a laptop the patron app was a narrow strip stranded in black, which reads as
+   broken rather than as "this is a phone app". It stays phone-width -- patrons use
+   phones -- but is framed deliberately, like a device preview. The staff screens go
+   the other way and use the room they have.
+   --------------------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  body {
+    /* A soft vignette so the page isn't a flat black void behind the column. */
+    background:
+      radial-gradient(1200px 800px at 50% -10%, #241e1a 0%, transparent 70%),
+      var(--color-surface-container-lowest);
+  }
+
+  .app-shell:not(.app-shell--wide) {
+    max-width: 460px;
+    min-height: calc(100vh - 64px);
+    margin: 32px auto;
+    border: var(--border-hairline);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
+  }
+
+  /* The fixed bars are positioned against the viewport, so pin them to the framed
+     column instead of the middle of the screen. */
+  .app-shell:not(.app-shell--wide) .bottom-nav {
+    position: absolute;
+    bottom: 16px;
+    width: calc(100% - 32px);
+  }
+
+  .app-shell:not(.app-shell--wide) .sticky-footer {
+    position: absolute;
+    max-width: none;
+  }
+
+  .app-shell:not(.app-shell--wide) .sheet,
+  .app-shell:not(.app-shell--wide) .sheet-backdrop {
+    position: absolute;
+  }
+
+  /* Staff surfaces: floor view, kitchen display, analytics. */
+  .app-shell--wide {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .app-shell--wide .screen {
+    padding-bottom: var(--space-container-mobile);
+  }
+
+  /* Two columns of request cards instead of one long scroll. */
+  .app-shell--wide .request-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+
+  .app-shell--wide .stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-shell--wide .request-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .screen {
   flex: 1;
   display: flex;
@@ -363,10 +438,19 @@ a {
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: none;
+  /* The row already scrolled, but a pill clipped flat at the edge reads as broken rather
+     than as "there's more". Fading the trailing edge makes it obvious it scrolls. */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  scroll-snap-type: x proximity;
 }
 
 .pill-row::-webkit-scrollbar {
   display: none;
+}
+
+.pill-row > * {
+  scroll-snap-align: start;
 }
 
 .pill {
@@ -715,4 +799,512 @@ a {
   -webkit-backdrop-filter: blur(20px);
   border: var(--border-hairline);
   border-radius: var(--radius-xl);
+}
+
+/* ---------------------------------------------------------------------------
+   Staff: shared header, table status, kitchen display
+   --------------------------------------------------------------------------- */
+
+.screen--staff {
+  padding-bottom: 32px;
+}
+
+.staff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.table-status {
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container);
+  border: var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table-status__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.table-status__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-chip {
+  position: relative;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+}
+
+/* Only the state a server must act on gets the accent colour. */
+.table-chip--needs_attention {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border-color: transparent;
+}
+
+.table-chip--order_open {
+  border-color: var(--color-outline);
+  color: var(--color-on-surface);
+}
+
+.table-chip--seated {
+  color: var(--color-on-surface);
+}
+
+.table-chip--free {
+  opacity: 0.45;
+}
+
+.table-chip__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  color: #3a0a05;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Staff list/grid containers — one column on a phone, widened on desktop above. */
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Dietary filters
+   --------------------------------------------------------------------------- */
+
+.diet-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Kept on one line: wrapping pushed "Clear" onto a second row the moment a filter was
+   selected, which made the whole block jump. Scrolls instead, like the kitchens row. */
+.diet-row__chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+}
+
+.diet-row__chips::-webkit-scrollbar {
+  display: none;
+}
+
+.diet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  /* 36px still clears WCAG 2.2 target-size minimum (24px) with room to spare, while
+     letting all three tags plus Clear sit on one line. */
+  min-height: 36px;
+  padding: 0 11px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.diet-chip__tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-container-highest);
+  color: var(--color-on-surface-variant);
+}
+
+.diet-chip.is-active {
+  background: var(--color-primary-container);
+  border-color: transparent;
+  color: var(--color-on-primary-container);
+}
+
+.diet-chip.is-active .diet-chip__tag {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--color-on-primary-container);
+}
+
+.diet-chip--clear {
+  color: var(--color-outline);
+}
+
+/* Keyboard users could barely tell where they were — one visible ring everywhere. */
+.diet-chip:focus-visible,
+.pill:focus-visible,
+.tab:focus-visible,
+.sheet__item:focus-visible,
+.bottom-nav__item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diet-chip {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Bottom sheet (the ⋯ menu) and order cards
+   --------------------------------------------------------------------------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 70;
+}
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+  background: var(--color-surface-container);
+  border: var(--border-hairline);
+  border-bottom: none;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.sheet__handle {
+  width: 36px;
+  height: 4px;
+  margin: 2px auto 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-outline-variant);
+}
+
+.sheet__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-high);
+  border: var(--border-hairline);
+  color: var(--color-on-surface);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sheet__item:active {
+  background: var(--color-surface-container-highest);
+}
+
+.sheet__item svg {
+  color: var(--color-primary-container);
+  flex: none;
+}
+
+.sheet__label,
+.sheet__detail {
+  display: block;
+}
+
+.sheet__label {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.sheet__detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+
+.order-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.order-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.order-card .label-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.order-card__lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.order-card__lines li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* An order still moving through the kitchen gets the accent; served ones stay neutral. */
+.chip--live {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border-color: transparent;
+}
+
+.chip--declined {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+/* A declined order was never cooked — mute the row so it can't be mistaken for one. */
+.order-card--declined {
+  opacity: 0.72;
+}
+
+.consent-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container);
+  border: var(--border-hairline);
+}
+
+.consent-banner__dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--color-outline);
+}
+
+.consent-banner.is-on .consent-banner__dot {
+  background: var(--color-primary-container);
+}
+
+.consent-banner__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+}
+
+.consent-banner.is-on .consent-banner__text {
+  color: var(--color-on-surface);
+}
+
+.consent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container);
+  border: var(--border-hairline);
+  cursor: pointer;
+}
+
+.consent input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--color-primary-container);
+  flex: none;
+}
+
+.consent__title,
+.consent__detail {
+  display: block;
+}
+
+.consent__title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-on-surface);
+}
+
+.consent__detail {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-on-surface-variant);
+}
+
+.staff-login {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.staff-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-signout {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 24px;
+}
+
+.kds-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.kds-station {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container);
+  border: var(--border-hairline);
+}
+
+.kds-station__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kds-station__head h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 17px;
+}
+
+.kds-ticket {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-high);
+  border-left: 3px solid var(--color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kds-ticket--placed {
+  border-left-color: var(--color-primary-container);
+}
+
+.kds-ticket--preparing {
+  border-left-color: var(--color-outline);
+}
+
+.kds-ticket--ready {
+  border-left-color: #8fd18f;
+}
+
+.kds-ticket__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kds-ticket__top .label-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kds-ticket__lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.kds-ticket__qty {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kds-ticket__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .kds-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
 }

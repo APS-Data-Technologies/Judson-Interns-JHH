@@ -1,21 +1,88 @@
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../lib/cart';
 import { useComingSoon } from '../../lib/toast';
 import { formatPrice } from '../../lib/dietary';
+import { fetchMyOrders } from '../../lib/api';
+import type { Order } from '../../lib/types';
 import BottomNav from '../../components/BottomNav';
 import ScreenHeader from '../../components/ScreenHeader';
-import { EmptyState } from '../../components/AsyncState';
+import OrderList from '../../components/OrderList';
+import { EmptyState, ErrorState, LoadingState } from '../../components/AsyncState';
 import { IconFork, IconMinus, IconPlus, IconTrash } from '../../components/icons';
 
-export default function CartPage() {
+const POLL_MS = 10000;
+
+type Tab = 'cart' | 'all';
+
+/**
+ * My Orders — the one place a patron manages what they're ordering and what they've
+ * ordered.
+ *
+ * "Your Order" is the live cart (still editable, still un-ordered); "All Orders" is
+ * everything already sent to the kitchen, including declined attempts. Reached from the
+ * bag in the bottom nav, or from the ⋯ menu.
+ */
+export default function CartPage({ initialTab = 'cart' }: { initialTab?: Tab } = {}) {
   const navigate = useNavigate();
   const { lines, updateQuantity, removeItem, subtotal, tax, serviceCharge, total, loyaltyPoints } = useCart();
   const comingSoon = useComingSoon();
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersStatus, setOrdersStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  const loadOrders = useCallback(async () => {
+    try {
+      setOrders(await fetchMyOrders());
+      setOrdersStatus('ready');
+    } catch {
+      // The cart half must keep working even if order history is unreachable.
+      setOrdersStatus((current) => (current === 'ready' ? current : 'error'));
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOrders();
+    const timer = setInterval(loadOrders, POLL_MS);
+    return () => clearInterval(timer);
+  }, [loadOrders]);
+
+  const cartCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return (
     <section className="screen">
-      <ScreenHeader title="Your Order" />
+      <ScreenHeader title="My Orders" />
 
+      <div className="tab-row">
+        <button
+          type="button"
+          className={`tab${tab === 'cart' ? ' is-active' : ''}`}
+          onClick={() => setTab('cart')}
+        >
+          Your Order{cartCount > 0 ? ` (${cartCount})` : ''}
+        </button>
+        <button
+          type="button"
+          className={`tab${tab === 'all' ? ' is-active' : ''}`}
+          onClick={() => setTab('all')}
+        >
+          All Orders{orders.length > 0 ? ` (${orders.length})` : ''}
+        </button>
+      </div>
+
+      {tab === 'all' && (
+        <>
+          {ordersStatus === 'loading' && <LoadingState label="Loading your orders..." />}
+          {ordersStatus === 'error' && <ErrorState label="Couldn't load your orders. Please try again." />}
+          {ordersStatus === 'ready' && orders.length === 0 && (
+            <EmptyState label="Nothing ordered yet tonight." />
+          )}
+          <OrderList orders={orders} />
+        </>
+      )}
+
+      {tab === 'cart' && (
+      <>
       <div>
         <h1 className="headline-lg" style={{ fontSize: 28 }}>
           Your Order
@@ -108,6 +175,8 @@ export default function CartPage() {
             </button>
           </div>
         </>
+      )}
+      </>
       )}
 
       <BottomNav />

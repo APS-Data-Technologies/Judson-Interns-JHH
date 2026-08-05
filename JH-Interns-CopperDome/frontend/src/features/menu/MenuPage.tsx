@@ -4,6 +4,7 @@ import { fetchKitchens, fetchMenuItems, logEvent } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { useCart } from '../../lib/cart';
 import { useToast } from '../../lib/toast';
+import { dietaryLabel } from '../../lib/dietary';
 import type { Kitchen, MenuItem } from '../../lib/types';
 import BottomNav from '../../components/BottomNav';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -26,6 +27,10 @@ export default function MenuPage() {
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // Dietary tags were printed but not actionable — a patron with a restriction had to read
+  // all 35 dishes or ask the concierge. Selecting several narrows to dishes carrying all
+  // of them, which is what "vegetarian AND gluten-free" means to the person asking.
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (session) {
@@ -39,7 +44,6 @@ export default function MenuPage() {
       .then((data) => {
         if (cancelled) return;
         setKitchens(data);
-        if (data[0]) setSelectedKitchenId(data[0].id);
       })
       .catch(() => !cancelled && setStatus('error'));
     return () => {
@@ -47,13 +51,14 @@ export default function MenuPage() {
     };
   }, []);
 
+  // `null` means All Kitchens — the unified browse the scope calls for (3.1). Fetching
+  // without a kitchen filter returns every dish across the three kitchens in one list.
   useEffect(() => {
-    if (selectedKitchenId === null) return;
     let cancelled = false;
     setStatus('loading');
     setSelectedCategory('All');
     setVisibleCount(PAGE_SIZE);
-    fetchMenuItems(selectedKitchenId)
+    fetchMenuItems(selectedKitchenId ?? undefined)
       .then((data) => {
         if (cancelled) return;
         setItems(data);
@@ -70,6 +75,14 @@ export default function MenuPage() {
     return ['All', ...unique];
   }, [items]);
 
+  // Tags actually present in the current list, so the row never offers a filter that
+  // would return nothing.
+  const availableTags = useMemo(() => {
+    const unique = new Set<string>();
+    items.forEach((item) => item.dietary_tags.forEach((tag) => unique.add(tag)));
+    return Array.from(unique).sort();
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -77,22 +90,40 @@ export default function MenuPage() {
         !search.trim() ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.description.toLowerCase().includes(search.toLowerCase());
-      return matchesCategory && matchesSearch;
+      const matchesTags = selectedTags.every((tag) => item.dietary_tags.includes(tag));
+      return matchesCategory && matchesSearch && matchesTags;
     });
-  }, [items, selectedCategory, search]);
+  }, [items, selectedCategory, search, selectedTags]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((current) =>
+      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
+    );
+    setVisibleCount(PAGE_SIZE);
+  };
 
   const visibleItems = filteredItems.slice(0, visibleCount);
-  const selectedKitchen = kitchens.find((kitchen) => kitchen.id === selectedKitchenId);
+
+  // In the unified view every dish can come from a different kitchen, so resolve the
+  // name per item rather than from a single selected kitchen.
+  const kitchenNameFor = (item: MenuItem) =>
+    kitchens.find((kitchen) => kitchen.id === item.kitchen)?.name ?? '';
 
   const handleQuickAdd = (item: MenuItem) => {
-    if (!selectedKitchen) return;
-    addItem(item, selectedKitchen.name);
+    addItem(item, kitchenNameFor(item));
     showToast(`Added ${item.name} to cart`);
     if (session) {
       logEvent({
         eventType: 'item_added_to_cart',
         sessionId: session.sessionId,
-        metadata: { menu_item_id: item.id, quantity: 1, source: 'menu_list' },
+        metadata: {
+          menu_item_id: item.id,
+          quantity: 1,
+          source: 'menu_list',
+          kitchen_id: item.kitchen,
+          // Distinguishes cross-kitchen discovery from single-kitchen browsing.
+          view: selectedKitchenId === null ? 'all_kitchens' : 'single_kitchen',
+        },
       });
     }
   };
@@ -116,6 +147,13 @@ export default function MenuPage() {
           Kitchens
         </p>
         <div className="pill-row">
+          <button
+            type="button"
+            className={`pill${selectedKitchenId === null ? ' is-active' : ''}`}
+            onClick={() => setSelectedKitchenId(null)}
+          >
+            All Kitchens
+          </button>
           {kitchens.map((kitchen) => (
             <button
               key={kitchen.id}
@@ -128,6 +166,34 @@ export default function MenuPage() {
           ))}
         </div>
       </div>
+
+      {availableTags.length > 0 && (
+        <div className="diet-row">
+          <p className="label-sm">Dietary</p>
+          <div className="diet-row__chips">
+            {availableTags.map((tag) => {
+              const isOn = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`diet-chip${isOn ? ' is-active' : ''}`}
+                  aria-pressed={isOn}
+                  onClick={() => toggleTag(tag)}
+                >
+                  <span className="diet-chip__tag">{tag}</span>
+                  {dietaryLabel(tag)}
+                </button>
+              );
+            })}
+            {selectedTags.length > 0 && (
+              <button type="button" className="diet-chip diet-chip--clear" onClick={() => setSelectedTags([])}>
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="tab-row">
         {categories.map((category) => (
@@ -147,7 +213,15 @@ export default function MenuPage() {
 
       {status === 'loading' && <LoadingState label="Loading menu items..." />}
       {status === 'error' && <ErrorState label="Couldn't load the menu. Pull to refresh and try again." />}
-      {status === 'ready' && filteredItems.length === 0 && <EmptyState label="No dishes match your search." />}
+      {status === 'ready' && filteredItems.length === 0 && (
+        <EmptyState
+          label={
+            selectedTags.length > 0
+              ? `No dishes here are ${selectedTags.map(dietaryLabel).join(' and ').toLowerCase()}. Try another kitchen, or ask the concierge.`
+              : 'No dishes match your search.'
+          }
+        />
+      )}
 
       {status === 'ready' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -155,7 +229,7 @@ export default function MenuPage() {
             <MenuItemCard
               key={item.id}
               item={item}
-              kitchenName={selectedKitchen?.name ?? ''}
+              kitchenName={kitchenNameFor(item)}
               onOpen={() => navigate(`/menu/${item.id}`)}
               onQuickAdd={() => handleQuickAdd(item)}
             />

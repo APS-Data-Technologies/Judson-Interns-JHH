@@ -20,11 +20,26 @@ describe('AnalyticsPage', () => {
   it('renders the required engagement metrics', async () => {
     vi.mocked(api.fetchAnalytics).mockResolvedValue({
       total_sessions: 12,
+      sessions_issued: 16,
+      sessions_opted_in: 12,
+      opt_in_rate: 0.75,
       concierge_open_rate: 0.5,
       ai_queries_per_session: 2.25,
       request_types_by_frequency: { water: 3, call_server: 1 },
       menu_to_cart_drop_off: 0.25,
       median_session_duration_seconds: 125,
+      event_counts: {
+        session_started: 12,
+        menu_viewed: 11,
+        menu_item_viewed: 9,
+        ai_question_asked: 27,
+        item_added_to_cart: 8,
+        mock_checkout_started: 5,
+        mock_checkout_completed: 4,
+        service_request_created: 4,
+      },
+      event_types_fired: 8,
+      event_types_total: 8,
     });
 
     renderAnalytics();

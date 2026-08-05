@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logEvent } from '../../lib/api';
+import { createOrder, logEvent } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { useCart } from '../../lib/cart';
 import { useComingSoon } from '../../lib/toast';
@@ -8,11 +8,22 @@ import { formatPrice } from '../../lib/dietary';
 import ScreenHeader from '../../components/ScreenHeader';
 import { IconCheck, IconFork } from '../../components/icons';
 
+/**
+ * Test flag for the mock-failure path. Set either during a demo:
+ *   - `?fail=1` on the checkout URL, or
+ *   - `VITE_MOCK_CHECKOUT_FAILS=true` at build time.
+ */
+function shouldFailCheckout(): boolean {
+  if (new URLSearchParams(window.location.search).get('fail') === '1') return true;
+  return import.meta.env.VITE_MOCK_CHECKOUT_FAILS === 'true';
+}
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { session } = useSession();
   const { lines, subtotal, tax, serviceCharge, total, clearCart } = useCart();
   const comingSoon = useComingSoon();
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (lines.length === 0) {
@@ -26,13 +37,55 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
+    // Scope 3.1: mock checkout succeeds or fails on a test flag. Nothing is ever
+    // charged either way — the flag only exercises the failure path for a demo.
+    if (shouldFailCheckout()) {
+      setFailed(true);
+      if (session) {
+        logEvent({
+          eventType: 'mock_checkout_started',
+          sessionId: session.sessionId,
+          metadata: { total: Number(total.toFixed(2)), outcome: 'mock_failure' },
+        });
+
+        // Record the declined attempt so it appears in the patron's order history
+        // instead of vanishing. It never reaches the kitchen display.
+        try {
+          await createOrder({
+            sessionId: session.sessionId,
+            tableNumber: session.tableNumber,
+            total,
+            lines,
+            status: 'declined',
+          });
+        } catch {
+          // The on-screen decline notice is the patron's feedback; this row is a record.
+        }
+      }
+      // The cart is intentionally kept so the patron can simply try again.
+      return;
+    }
+
     if (session) {
       logEvent({
         eventType: 'mock_checkout_completed',
         sessionId: session.sessionId,
         metadata: { total: Number(total.toFixed(2)), item_count: lines.reduce((sum, l) => sum + l.quantity, 0) },
       });
+
+      // Record the simulated order so the kitchen display has a ticket to show. Best
+      // effort — a failure here must not strand the patron on the checkout screen.
+      try {
+        await createOrder({
+          sessionId: session.sessionId,
+          tableNumber: session.tableNumber,
+          total,
+          lines,
+        });
+      } catch {
+        // Swallowed deliberately: the order is a demo artefact, not the patron's receipt.
+      }
     }
     clearCart();
     navigate('/order-status');
@@ -101,9 +154,21 @@ export default function CheckoutPage() {
         </button>
       </div>
 
+      {failed && (
+        <div className="card card-body" role="alert" style={{ borderColor: 'var(--color-error)' }}>
+          <p className="label-md" style={{ color: 'var(--color-error)' }}>
+            Payment declined (mock)
+          </p>
+          <p className="label-sm">
+            Nothing was charged. This is the simulated failure path — your cart is untouched, so you
+            can try again or ask your server.
+          </p>
+        </div>
+      )}
+
       <div className="sticky-footer">
         <button type="button" className="btn btn-primary" onClick={handleCompleteOrder}>
-          Complete Order
+          {failed ? 'Try Again' : 'Complete Order'}
         </button>
       </div>
     </section>

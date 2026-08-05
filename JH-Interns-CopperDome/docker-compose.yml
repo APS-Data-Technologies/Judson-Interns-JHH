@@ -32,10 +32,16 @@ services:
       # Set on the host before `docker compose up` (e.g. `export ANTHROPIC_API_KEY=sk-ant-...`)
       # so the AI concierge works — the key is never baked into the image or committed.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5}
     depends_on:
       - db
-    command: sh -c "pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # Seeding is part of startup: without it the menu is empty, so the PWA has nothing to
+    # show and the concierge has no grounding context. seed_menu_data is idempotent.
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             python manage.py migrate &&
+             python manage.py seed_menu_data &&
+             python manage.py runserver 0.0.0.0:8000"
 
   frontend:
     image: node:20-alpine

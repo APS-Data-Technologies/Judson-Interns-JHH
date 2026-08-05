@@ -14,11 +14,25 @@ function resolveWsUrl(): string {
 }
 
 const RECONNECT_DELAY_MS = 2000;
+const POLL_INTERVAL_MS = 5000;
 
-export function useStaffFeed(onMessage: (message: StaffFeedMessage) => void) {
+/**
+ * Live staff feed over Channels, with the polling fallback the scope calls for if
+ * real-time slips (5.3). `onPoll` is invoked on an interval whenever the socket is
+ * not connected, so a floor never goes silent because a WebSocket was blocked.
+ */
+export function useStaffFeed(onMessage: (message: StaffFeedMessage) => void, onPoll?: () => void) {
   const [connected, setConnected] = useState(false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
+  const onPollRef = useRef(onPoll);
+  onPollRef.current = onPoll;
+
+  useEffect(() => {
+    if (connected) return undefined;
+    const timer = setInterval(() => onPollRef.current?.(), POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [connected]);
 
   useEffect(() => {
     let socket: WebSocket | null = null;
